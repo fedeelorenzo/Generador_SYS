@@ -85,13 +85,6 @@ def generar_balance_para(id_cuit, desde, hasta,cuit_str,razon_social):
         else:
             balance_agrupado.loc[len(balance_agrupado)] = ["03.00 PATRIMONIO NETO", round(resultado_final, 2)]
 
-        # --- EXPORTACIÓN A EXCEL ---
-        nombre_excel = f"balance_final_{nombre_limpio}_{desde}_a_{hasta}.xlsx"
-        with pd.ExcelWriter(nombre_excel, engine="xlsxwriter") as writer:
-    
-            balance_agrupado.to_excel(writer, sheet_name="Balance", index=False)
-            eerr_detalle.to_excel(writer, sheet_name="Estado Resultados", index=False)
-
         # --- ESTRUCTURA PARA PDF (Rubro > Subrubro > Cuenta) ---
         df_rubros = df[df["Rubro Balance"].isin(["Activo Corriente", "Activo No Corriente", "Pasivo Corriente", "Pasivo No Corriente", "Patrimonio Neto"])]
         estructura = defaultdict(lambda: defaultdict(list))
@@ -118,8 +111,11 @@ def generar_balance_para(id_cuit, desde, hasta,cuit_str,razon_social):
                 if row["montosaldo_fin"] != 0:
                     subestructura[row["Presentacion"]].append((row["cuenta"], row["montosaldo_fin"]))
             estructura_horizontal[bloque] = subestructura
-        # --- PDF ---
-
+            
+            
+            
+            
+                # --- PDF ---
         class PDFBalance(FPDF):
             def __init__(self, empresa, cuit, desde, hasta, *args, **kwargs):
                 super().__init__(*args, **kwargs)
@@ -148,7 +144,6 @@ def generar_balance_para(id_cuit, desde, hasta,cuit_str,razon_social):
                     if total_subrubro == 0:
                         continue
 
-                    # Limpiar prefijo numérico
                     subrubro_clean = " ".join(subrubro.split(" ")[1:]) if " " in subrubro else subrubro
 
                     self.set_x(x)
@@ -161,47 +156,36 @@ def generar_balance_para(id_cuit, desde, hasta,cuit_str,razon_social):
                     for cuenta, monto in cuentas:
                         if monto == 0:
                             continue
-
                         cuenta_texto = f"- {cuenta}"
-
-                        # Truncar texto para que no se pase al lado del monto
-                        max_chars = int((w * 1 - 5) // 2.0)  # estimación por fuente Arial 8
+                        max_chars = int((w * 1 - 5) // 2.0)
                         if len(cuenta_texto) > max_chars:
                             cuenta_texto = cuenta_texto[:max_chars - 3] + "..."
-
                         self.set_x(x + 2)
                         self.cell(w * 0.65 - 2, 5, cuenta_texto, border=0)
                         self.cell(w * 0.35, 5, f"${monto:,.2f}", border=0, ln=True, align="R")
-
-
                     self.ln(1)
 
-        # Crear PDF
-        
-        pdf = PDFBalance(
-            empresa=razon_social,
-            cuit=cuit_str,
-            desde=desde,
-            hasta=hasta,
-            orientation='L', unit='mm', format='A4'
-        )     
-        pdf.add_page()
-
-        # Distribución uniforme: 4 columnas iguales (69.25 mm de ancho cada una)
-        col_width = 69.25
-        posiciones = [10, 10 + col_width, 10 + 2 * col_width, 10 + 3 * col_width]
-        anchos = [col_width] * 4
-
-        # Renderizar columnas
-        for i, (nombre_bloque, contenido) in enumerate(estructura_horizontal.items()):
-            pdf.render_col(posiciones[i], anchos[i], nombre_bloque, contenido)
-
-        # Exportar
-        # Sanitizar nombre de empresa para usar en el nombre del archivo
-        if not razon_social:
-         return False, "La razón social está vacía o no fue pasada correctamente."
-
+        # --- Generación del PDF final y retorno ---
         try:
+            if not razon_social or not isinstance(razon_social, str):
+                return False, "Razón social no está definida correctamente."
+
+            pdf = PDFBalance(
+                empresa=razon_social,
+                cuit=cuit_str,
+                desde=desde,
+                hasta=hasta,
+                orientation='L', unit='mm', format='A4'
+            )
+            pdf.add_page()
+
+            col_width = 69.25
+            posiciones = [10, 10 + col_width, 10 + 2 * col_width, 10 + 3 * col_width]
+            anchos = [col_width] * 4
+
+            for i, (nombre_bloque, contenido) in enumerate(estructura_horizontal.items()):
+                pdf.render_col(posiciones[i], anchos[i], nombre_bloque, contenido)
+
             nombre_limpio = razon_social.replace(" ", "_").replace(".", "").replace(",", "")
             nombre_archivo = f"Balance_{nombre_limpio}_{desde}_a_{hasta}.pdf"
 
@@ -209,12 +193,9 @@ def generar_balance_para(id_cuit, desde, hasta,cuit_str,razon_social):
                 pdf.output(tmpfile.name)
                 ruta_pdf = tmpfile.name
 
-            print(f"✅ PDF generado: {ruta_pdf}")
             return True, ruta_pdf
 
         except Exception as e:
-            return False, f"Error al generar PDF: {e}"
-
+            return False, f"❌ Error al generar PDF: {e}"
     except Exception as e:
-        return False, str(e)
-
+            return False, f"Error en Generar Balance"
