@@ -45,4 +45,6 @@ with st.form("form_balance"):
                 )
         else:
             st.error("No se pudo generar o encontrar el archivo PDF.")
+            st.write(f"📎 Ruta recibida: {ruta_pdf}")
+
             
