@@ -10,7 +10,7 @@ if not st.session_state['auth']:
     password = st.text_input("🔐 Ingresá tu token de acceso:", type="password")
     if password == st.secrets["clave_acceso"]:
         st.session_state['auth'] = True
-        st.experimental_rerun()
+        st.rerun()
     else:
         st.stop()
 
