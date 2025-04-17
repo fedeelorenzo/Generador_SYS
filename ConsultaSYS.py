@@ -198,15 +198,23 @@ def generar_balance_para(id_cuit, desde, hasta,cuit_str,razon_social):
 
         # Exportar
         # Sanitizar nombre de empresa para usar en el nombre del archivo
-        nombre_limpio = razon_social.replace(" ", "_").replace(".", "").replace(",", "")
+        if not razon_social:
+         return False, "La razón social está vacía o no fue pasada correctamente."
+
+        try:
+            nombre_limpio = razon_social.replace(" ", "_").replace(".", "").replace(",", "")
+        except Exception as e:
+            return False, f"Error al sanitizar nombre: {e}"
+
         nombre_archivo = f"Balance_{nombre_limpio}_{desde}_a_{hasta}.pdf"
+
 
         with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmpfile:
             pdf.output(tmpfile.name)
             ruta_pdf = tmpfile.name
-            print(f"📄 PDF generado en: {ruta_pdf}")
-
+        print(f"📄 PDF generado en: {ruta_pdf}")
         return True, ruta_pdf
+
     except Exception as e:
         return False, str(e)
 
