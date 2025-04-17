@@ -86,7 +86,9 @@ def generar_balance_para(id_cuit, desde, hasta,cuit_str,razon_social):
             balance_agrupado.loc[len(balance_agrupado)] = ["03.00 PATRIMONIO NETO", round(resultado_final, 2)]
 
         # --- EXPORTACIÓN A EXCEL ---
-        with pd.ExcelWriter("balance_final_88350.xlsx", engine="xlsxwriter") as writer:
+        nombre_excel = f"balance_final_{nombre_limpio}_{desde}_a_{hasta}.xlsx"
+        with pd.ExcelWriter(nombre_excel, engine="xlsxwriter") as writer:
+    
             balance_agrupado.to_excel(writer, sheet_name="Balance", index=False)
             eerr_detalle.to_excel(writer, sheet_name="Estado Resultados", index=False)
 
