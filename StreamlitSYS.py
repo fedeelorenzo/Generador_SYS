@@ -1,6 +1,10 @@
 import streamlit as st
 from ConsultaSYS import generar_balance_para
 import os
+from PIL import Image
+
+logo = Image.open("logo.png")
+st.image(logo, width=180)  # podés ajustar el tamaño
 
 st.set_page_config(page_title="Generador de Sumas y Saldos", layout="centered")
 
@@ -18,7 +22,7 @@ if not st.session_state['auth']:
 clientes = st.secrets["clientes"]
 empresas = list(clientes.keys())
 
-st.title("📊 Generador de Sumas y Saldos Online")
+st.title("📊 Generador de Sumas y Saldos ")
 
 # --- Formulario ---
 with st.form("form_balance"):
