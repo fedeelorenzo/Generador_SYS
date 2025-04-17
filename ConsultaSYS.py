@@ -204,6 +204,7 @@ def generar_balance_para(id_cuit, desde, hasta,cuit_str,razon_social):
         with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmpfile:
             pdf.output(tmpfile.name)
             ruta_pdf = tmpfile.name
+            print(f"📄 PDF generado en: {ruta_pdf}")
 
         return True, ruta_pdf
     except Exception as e:
