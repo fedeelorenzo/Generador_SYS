@@ -3,8 +3,7 @@ from ConsultaSYS import generar_balance_para
 import os
 from PIL import Image
 
-logo = Image.open("logo.png")
-st.image(logo, width=180)  # podés ajustar el tamaño
+
 
 st.set_page_config(page_title="Generador de Sumas y Saldos", layout="centered")
 
@@ -17,6 +16,10 @@ if not st.session_state['auth']:
         st.rerun()
     else:
         st.stop()
+
+
+logo = Image.open("logo.png")
+st.image(logo, width=180)  # podés ajustar el tamaño
 
 # --- Clientes desde secrets ---
 clientes = st.secrets["clientes"]
