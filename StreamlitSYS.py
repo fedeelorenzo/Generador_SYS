@@ -20,7 +20,7 @@ if not st.session_state['auth']:
 
 col1, col2 = st.columns([1, 5])
 with col1:
-    st.image("logo.png", width=80)
+    st.image("logo.png", width=180)
 with col2:
     st.title("📊 Generador de Sumas y Saldos")
 
