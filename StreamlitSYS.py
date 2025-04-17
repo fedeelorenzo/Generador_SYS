@@ -18,14 +18,16 @@ if not st.session_state['auth']:
         st.stop()
 
 
-logo = Image.open("logo.png")
-st.image(logo, width=180)  # podés ajustar el tamaño
+col1, col2 = st.columns([1, 5])
+with col1:
+    st.image("logo.png", width=80)
+with col2:
+    st.title("📊 Generador de Sumas y Saldos")
+
 
 # --- Clientes desde secrets ---
 clientes = st.secrets["clientes"]
 empresas = list(clientes.keys())
-
-st.title("📊 Generador de Sumas y Saldos ")
 
 # --- Formulario ---
 with st.form("form_balance"):
