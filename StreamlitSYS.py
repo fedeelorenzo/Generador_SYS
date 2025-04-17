@@ -18,11 +18,16 @@ if not st.session_state['auth']:
         st.stop()
 
 
-col1, col2 = st.columns([1, 5])
+col1, col2 = st.columns([1, 6])
 with col1:
-    st.image("logo.png", width=180)
+    st.image("logo.png", width=60)
 with col2:
-    st.title("📊 Generador de Sumas y Saldos")
+    st.markdown(
+        "<h3 style='margin-top: 15px; font-weight: 600;'>📊 Generador de Sumas y Saldos</h3>",
+        unsafe_allow_html=True
+    )
+st.markdown("<small style='color: gray;'>Versión Online - Lorenzo y Asociados</small>", unsafe_allow_html=True)
+    
 
 
 # --- Clientes desde secrets ---
