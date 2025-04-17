@@ -34,7 +34,7 @@ with st.form("form_balance"):
 
         exito, ruta_pdf = generar_balance_para(id_cuit, str(desde), str(hasta), cuit, empresa)
 
-        if exito:
+        if exito and os.path.exists(ruta_pdf):
             st.success("Balance generado correctamente ✅")
             with open(ruta_pdf, "rb") as f:
                 st.download_button(
@@ -44,5 +44,5 @@ with st.form("form_balance"):
                     mime="application/pdf"
                 )
         else:
-            st.error(ruta_pdf)
+            st.error("No se pudo generar o encontrar el archivo PDF.")
             
