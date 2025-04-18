@@ -132,12 +132,33 @@ def generar_balance_para(id_cuit, desde, hasta,cuit_str,razon_social):
                 self.ln(3)
                 self.line(10, self.get_y(), 287, self.get_y())
                 self.ln(4)
-
+                
             def render_col(self, x, w, title, estructura):
                 self.set_xy(x, 30)
                 self.set_fill_color(235, 235, 235)
                 self.set_font("Arial", "B", 11)
                 self.cell(w, 8, title.upper(), ln=True, align="C", border=1, fill=True)
+
+                # 💡 Calcular altura total estimada para ver si entra en la hoja
+                altura_total = 8  # altura del título
+                for subrubro, cuentas in estructura.items():
+                    if sum(s for _, s in cuentas) == 0:
+                        continue
+                    altura_total += 6  # subrubro
+                    altura_total += len([c for c, v in cuentas if v != 0]) * 5  # cuentas
+                    altura_total += 1  # espacio extra
+
+                # 💡 Si se pasa de 180 mm, achicamos fuentes y celdas
+                if altura_total > 180:
+                    font_size_subrubro = 8
+                    font_size_cuenta = 6
+                    h_subrubro = 5
+                    h_cuenta = 4
+                else:
+                    font_size_subrubro = 9
+                    font_size_cuenta = 8
+                    h_subrubro = 6
+                    h_cuenta = 5
 
                 for subrubro, cuentas in estructura.items():
                     total_subrubro = sum(s for _, s in cuentas)
@@ -148,22 +169,23 @@ def generar_balance_para(id_cuit, desde, hasta,cuit_str,razon_social):
 
                     self.set_x(x)
                     self.set_fill_color(245, 245, 245)
-                    self.set_font("Arial", "B", 9)
-                    self.cell(w * 0.65, 6, subrubro_clean[:40], border="B", fill=True)
-                    self.cell(w * 0.35, 6, f"${total_subrubro:,.2f}", border="B", ln=True, align="R", fill=True)
+                    self.set_font("Arial", "B", font_size_subrubro)
+                    self.cell(w * 0.65, h_subrubro, subrubro_clean[:40], border="B", fill=True)
+                    self.cell(w * 0.35, h_subrubro, f"${total_subrubro:,.2f}", border="B", ln=True, align="R", fill=True)
 
-                    self.set_font("Arial", "", 8)
+                    self.set_font("Arial", "", font_size_cuenta)
                     for cuenta, monto in cuentas:
                         if monto == 0:
                             continue
                         cuenta_texto = f"- {cuenta}"
-                        max_chars = int((w * 1 - 5) // 2.0)
+                        max_chars = int((w * 1 - 5) // (font_size_cuenta * 0.5))
                         if len(cuenta_texto) > max_chars:
                             cuenta_texto = cuenta_texto[:max_chars - 3] + "..."
                         self.set_x(x + 2)
-                        self.cell(w * 0.65 - 2, 5, cuenta_texto, border=0)
-                        self.cell(w * 0.35, 5, f"${monto:,.2f}", border=0, ln=True, align="R")
+                        self.cell(w * 0.65 - 2, h_cuenta, cuenta_texto, border=0)
+                        self.cell(w * 0.35, h_cuenta, f"${monto:,.2f}", border=0, ln=True, align="R")
                     self.ln(1)
+
 
         # --- Generación del PDF final y retorno ---
         try:
