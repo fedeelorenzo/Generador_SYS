@@ -95,6 +95,9 @@ def generar_balance_para(id_cuit, desde, hasta,cuit_str,razon_social):
 
         # Agrupar cuentas por bloque y subrubro para presentación en columnas
         estructura_horizontal = {}
+        alturas = [calcular_altura_columna(estructura_horizontal[b]) for b in estructura_horizontal]
+        modo_compacto = any(h > 190 for h in alturas)
+
 
         # Separar por grandes bloques
         bloques = {
@@ -118,7 +121,16 @@ def generar_balance_para(id_cuit, desde, hasta,cuit_str,razon_social):
             estructura_horizontal[bloque] = subestructura
             
             
-            
+            def calcular_altura_columna(estructura):
+                altura = 8  # título
+                for subrubro, cuentas in estructura.items():
+                    if sum(s for _, s in cuentas) == 0:
+                        continue
+                    altura += 6  # subrubro
+                    altura += len([c for c, v in cuentas if v != 0]) * 5
+                    altura += 1
+                return altura
+                
             
                 # --- PDF ---
 
@@ -210,9 +222,10 @@ def generar_balance_para(id_cuit, desde, hasta,cuit_str,razon_social):
             col_width = 69.25
             posiciones = [10, 10 + col_width, 10 + 2 * col_width, 10 + 3 * col_width]
             anchos = [col_width] * 4
-
+            
             for i, (nombre_bloque, contenido) in enumerate(estructura_horizontal.items()):
                 pdf.render_col(posiciones[i], anchos[i], nombre_bloque, contenido, modo_compacto=modo_compacto)
+
 
 
             nombre_limpio = razon_social.replace(" ", "_").replace(".", "").replace(",", "")
