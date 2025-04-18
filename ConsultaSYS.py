@@ -141,6 +141,10 @@ def generar_balance_para(id_cuit, desde, hasta,cuit_str,razon_social):
                 self.set_xy(x, 30)
                 self.set_fill_color(235, 235, 235)
                 self.set_font("Arial", "B", 11)
+                
+                # Borde completo con celda única
+                self.cell(w, 8, "", ln=True, border=1, fill=True)
+                
                 # Calcular total general del bloque
                 total_bloque = 0
                 for cuentas in estructura.values():
