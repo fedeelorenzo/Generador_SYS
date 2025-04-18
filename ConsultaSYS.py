@@ -168,7 +168,8 @@ def generar_balance_para(id_cuit, desde, hasta,cuit_str,razon_social):
 
                 # Escribir el texto encima, alineado
                 self.set_xy(x + 2, 30)  # pequeño margen
-                self.cell(w - 4, 8, title.upper(), border=0, align="L")
+                titulo_visible = "PATRIMONIO" if title.upper() == "PATRIMONIO NETO" else title.upper()
+                self.cell(w - 4, 8, titulo_visible, border=0, align="L")
 
                 self.set_xy(x, 30)
                 self.cell(w - 2, 8, f"${total_bloque:,.2f}", border=0, align="R")
