@@ -148,8 +148,12 @@ def generar_balance_para(id_cuit, desde, hasta,cuit_str,razon_social):
 
                 # Título con total del bloque
                 titulo_completo = f"{title.upper()} - ${total_bloque:,.2f}"
-                self.cell(w, 8, titulo_completo, ln=True, align="C", border=1, fill=True)
 
+                # Fila dividida: 70% para texto, 30% para total
+                self.cell(w * 0.7, 8, title.upper(), border=1, fill=True, align="L")
+                self.cell(w * 0.3, 8, f"${total_bloque:,.2f}", border=1, fill=True, align="R")
+                self.ln()
+                
                 for subrubro, cuentas in estructura.items():
                     total_subrubro = sum(s for _, s in cuentas)
                     if total_subrubro == 0:
