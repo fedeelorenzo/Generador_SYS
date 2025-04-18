@@ -149,9 +149,9 @@ def generar_balance_para(id_cuit, desde, hasta,cuit_str,razon_social):
                 # Título con total del bloque
                 titulo_completo = f"{title.upper()} - ${total_bloque:,.2f}"
 
-                # Fila dividida: 70% para texto, 30% para total
-                self.cell(w * 0.7, 8, title.upper(), border=1, fill=True, align="L")
-                self.cell(w * 0.3, 8, f"${total_bloque:,.2f}", border=1, fill=True, align="R")
+                # Fila dividida: 50% para texto, 50% para total
+                self.cell(w * 0.5, 8, title.upper(), border=0, fill=True, align="L")
+                self.cell(w * 0.5, 8, f"${total_bloque:,.2f}", border=0, fill=True, align="R")
                 self.ln()
                 
                 for subrubro, cuentas in estructura.items():
