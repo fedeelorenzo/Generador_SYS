@@ -141,23 +141,25 @@ def generar_balance_para(id_cuit, desde, hasta,cuit_str,razon_social):
                 self.set_xy(x, 30)
                 self.set_fill_color(235, 235, 235)
                 self.set_font("Arial", "B", 11)
-                
-                # Borde completo con celda única
-                self.cell(w, 8, "", ln=True, border=1, fill=True)
-                
+
                 # Calcular total general del bloque
                 total_bloque = 0
                 for cuentas in estructura.values():
                     total_bloque += sum(monto for _, monto in cuentas)
 
-                # Título con total del bloque
-                titulo_completo = f"{title.upper()} - ${total_bloque:,.2f}"
+                # Dibujar el bloque del título completo con borde y fondo
+                self.cell(w, 8, "", ln=True, border=1, fill=True)
 
-                # Fila dividida: 50% para texto, 50% para total
-                self.cell(w * 0.5, 8, title.upper(), border=0, fill=True, align="L")
-                self.cell(w * 0.5, 8, f"${total_bloque:,.2f}", border=0, fill=True, align="R")
+                # Escribir el texto encima, alineado
+                self.set_xy(x + 2, 30)  # pequeño margen
+                self.cell(w - 4, 8, title.upper(), border=0, align="L")
+
+                self.set_xy(x, 30)
+                self.cell(w - 2, 8, f"${total_bloque:,.2f}", border=0, align="R")
+
                 self.ln()
-                
+
+                # Subrubros y cuentas
                 for subrubro, cuentas in estructura.items():
                     total_subrubro = sum(s for _, s in cuentas)
                     if total_subrubro == 0:
@@ -183,6 +185,7 @@ def generar_balance_para(id_cuit, desde, hasta,cuit_str,razon_social):
                         self.cell(w * 0.65 - 2, 5, cuenta_texto, border=0)
                         self.cell(w * 0.35, 5, f"${monto:,.2f}", border=0, ln=True, align="R")
                     self.ln(0.5)
+
 
         # --- Generación del PDF final y retorno ---
         try:
