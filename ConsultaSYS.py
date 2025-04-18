@@ -128,6 +128,7 @@ def generar_balance_para(id_cuit, desde, hasta,cuit_str,razon_social):
 
 
             def header(self):
+                self.image("logo.png", x=8, y=6, w=25)  # Margen izquierdo, altura, ancho del logo
                 self.set_font("Arial", "B", 12)
                 self.cell(0, 10, f"Balance General - Ejercicio {self.desde} al {self.hasta}", ln=True, align="C")
                 self.set_font("Arial", "", 10)
