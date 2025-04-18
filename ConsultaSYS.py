@@ -103,6 +103,11 @@ def generar_balance_para(id_cuit, desde, hasta,cuit_str,razon_social):
             "PATRIMONIO NETO": df[df["Rubro Balance"] == "Patrimonio Neto"],
             "RESULTADOS": df[df["Rubro Balance"].isin(["Ingresos", "Gastos"])]
         }
+                # Calcular si alguna columna se pasa del alto permitido
+        pdf_temp = PDFBalance("", "", "", "", bloques)  # usamos PDF temporal para calcular alturas
+        alturas = [pdf_temp.calcular_altura_columna(bloques[bloque]) for bloque in bloques]
+        modo_compacto = any(h > 190 for h in alturas)
+
 
         # Armar la estructura: bloque → subrubro → [(cuenta, monto)]
         for bloque, df_bloque in bloques.items():
@@ -116,75 +121,76 @@ def generar_balance_para(id_cuit, desde, hasta,cuit_str,razon_social):
             
             
                 # --- PDF ---
-        class PDFBalance(FPDF):
-            def __init__(self, empresa, cuit, desde, hasta, *args, **kwargs):
-                super().__init__(*args, **kwargs)
-                self.empresa = empresa
-                self.cuit = cuit
-                self.desde = desde
-                self.hasta = hasta
 
-            def header(self):
-                self.set_font("Arial", "B", 12)
-                self.cell(0, 10, f"Balance General - Ejercicio {self.desde} al {self.hasta}", ln=True, align="C")
-                self.set_font("Arial", "", 10)
-                self.cell(0, 7, f"Empresa: {self.empresa} - CUIT: {self.cuit}", ln=True, align="C")
-                self.ln(3)
-                self.line(10, self.get_y(), 287, self.get_y())
-                self.ln(4)
-                
-            def render_col(self, x, w, title, estructura):
-                self.set_xy(x, 30)
-                self.set_fill_color(235, 235, 235)
-                self.set_font("Arial", "B", 11)
-                self.cell(w, 8, title.upper(), ln=True, align="C", border=1, fill=True)
+            class PDFBalance(FPDF):
+                def __init__(self, empresa, cuit, desde, hasta, estructuras, *args, **kwargs):
+                    super().__init__(*args, **kwargs)
+                    self.empresa = empresa
+                    self.cuit = cuit
+                    self.desde = desde
+                    self.hasta = hasta
+                    self.estructuras = estructuras  # estructuras horizontales por bloque
 
-                # 💡 Calcular altura total estimada para ver si entra en la hoja
-                altura_total = 8  # altura del título
-                for subrubro, cuentas in estructura.items():
-                    if sum(s for _, s in cuentas) == 0:
-                        continue
-                    altura_total += 6  # subrubro
-                    altura_total += len([c for c, v in cuentas if v != 0]) * 5  # cuentas
-                    altura_total += 1  # espacio extra
+                def header(self):
+                    self.set_font("Arial", "B", 12)
+                    self.cell(0, 10, f"Balance General - Ejercicio {self.desde} al {self.hasta}", ln=True, align="C")
+                    self.set_font("Arial", "", 10)
+                    self.cell(0, 7, f"Empresa: {self.empresa} - CUIT: {self.cuit}", ln=True, align="C")
+                    self.ln(3)
+                    self.line(10, self.get_y(), 287, self.get_y())
+                    self.ln(4)
 
-                # 💡 Si se pasa de 180 mm, achicamos fuentes y celdas
-                if altura_total > 180:
-                    font_size_subrubro = 8
-                    font_size_cuenta = 6
-                    h_subrubro = 5
-                    h_cuenta = 4
-                else:
-                    font_size_subrubro = 9
-                    font_size_cuenta = 8
-                    h_subrubro = 6
-                    h_cuenta = 5
-
-                for subrubro, cuentas in estructura.items():
-                    total_subrubro = sum(s for _, s in cuentas)
-                    if total_subrubro == 0:
-                        continue
-
-                    subrubro_clean = " ".join(subrubro.split(" ")[1:]) if " " in subrubro else subrubro
-
-                    self.set_x(x)
-                    self.set_fill_color(245, 245, 245)
-                    self.set_font("Arial", "B", font_size_subrubro)
-                    self.cell(w * 0.65, h_subrubro, subrubro_clean[:40], border="B", fill=True)
-                    self.cell(w * 0.35, h_subrubro, f"${total_subrubro:,.2f}", border="B", ln=True, align="R", fill=True)
-
-                    self.set_font("Arial", "", font_size_cuenta)
-                    for cuenta, monto in cuentas:
-                        if monto == 0:
+                def calcular_altura_columna(self, estructura):
+                    altura = 8  # título
+                    for subrubro, cuentas in estructura.items():
+                        if sum(s for _, s in cuentas) == 0:
                             continue
-                        cuenta_texto = f"- {cuenta}"
-                        max_chars = int((w * 1 - 5) // (font_size_cuenta * 0.5))
-                        if len(cuenta_texto) > max_chars:
-                            cuenta_texto = cuenta_texto[:max_chars - 3] + "..."
-                        self.set_x(x + 2)
-                        self.cell(w * 0.65 - 2, h_cuenta, cuenta_texto, border=0)
-                        self.cell(w * 0.35, h_cuenta, f"${monto:,.2f}", border=0, ln=True, align="R")
-                    self.ln(1)
+                        altura += 6  # subrubro
+                        altura += len([c for c, v in cuentas if v != 0]) * 5
+                        altura += 1
+                    return altura
+                
+                alturas = [pdf.calcular_altura_columna(estructura_horizontal[b]) for b in estructura_horizontal]
+                modo_compacto = any(h > 190 for h in alturas)
+
+
+                def render_col(self, x, w, title, estructura, modo_compacto=False):
+                    self.set_xy(x, 30)
+                    self.set_fill_color(235, 235, 235)
+                    self.set_font("Arial", "B", 11)
+                    self.cell(w, 8, title.upper(), ln=True, align="C", border=1, fill=True)
+
+                    font_size_subrubro = 8 if modo_compacto else 9
+                    font_size_cuenta = 7 if modo_compacto else 8
+                    h_subrubro = 5 if modo_compacto else 6
+                    h_cuenta = 4 if modo_compacto else 5
+                    indent_x = 2
+
+                    for subrubro, cuentas in estructura.items():
+                        total_subrubro = sum(s for _, s in cuentas)
+                        if total_subrubro == 0:
+                            continue
+
+                        subrubro_clean = " ".join(subrubro.split(" ")[1:]) if " " in subrubro else subrubro
+
+                        self.set_x(x)
+                        self.set_fill_color(245, 245, 245)
+                        self.set_font("Arial", "B", font_size_subrubro)
+                        self.cell(w * 0.65, h_subrubro, subrubro_clean[:40], border="B", fill=True)
+                        self.cell(w * 0.35, h_subrubro, f"${total_subrubro:,.2f}", border="B", ln=True, align="R", fill=True)
+
+                        self.set_font("Arial", "", font_size_cuenta)
+                        for cuenta, monto in cuentas:
+                            if monto == 0:
+                                continue
+                            cuenta_texto = f"- {cuenta}"
+                            max_chars = int((w * 0.65 - indent_x) / (font_size_cuenta * 0.45))
+                            if len(cuenta_texto) > max_chars:
+                                cuenta_texto = cuenta_texto[:max_chars - 3] + "..."
+                            self.set_x(x + indent_x)
+                            self.cell(w * 0.65 - indent_x, h_cuenta, cuenta_texto, border=0)
+                            self.cell(w * 0.35, h_cuenta, f"${monto:,.2f}", border=0, ln=True, align="R")
+                        self.ln(1)
 
 
         # --- Generación del PDF final y retorno ---
@@ -206,7 +212,8 @@ def generar_balance_para(id_cuit, desde, hasta,cuit_str,razon_social):
             anchos = [col_width] * 4
 
             for i, (nombre_bloque, contenido) in enumerate(estructura_horizontal.items()):
-                pdf.render_col(posiciones[i], anchos[i], nombre_bloque, contenido)
+                pdf.render_col(posiciones[i], anchos[i], nombre_bloque, contenido, modo_compacto=modo_compacto)
+
 
             nombre_limpio = razon_social.replace(" ", "_").replace(".", "").replace(",", "")
             nombre_archivo = f"Balance_{nombre_limpio}_{desde}_a_{hasta}.pdf"
