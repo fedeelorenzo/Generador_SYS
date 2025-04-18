@@ -117,12 +117,13 @@ def generar_balance_para(id_cuit, desde, hasta,cuit_str,razon_social):
             
                 # --- PDF ---
         class PDFBalance(FPDF):
-            def __init__(self, empresa, cuit, desde, hasta, *args, **kwargs):
+            def __init__(self, empresa, cuit, desde, hasta, estructura_horizontal, *args, **kwargs):
                 super().__init__(*args, **kwargs)
                 self.empresa = empresa
                 self.cuit = cuit
                 self.desde = desde
                 self.hasta = hasta
+                self.estructura_horizontal = estructura_horizontal  # 👈 Nuevo atributo
                 self.set_auto_page_break(auto=False, margin=5)  # margen inferior reducido
                 self.set_margins(left=5, top=8, right=5)  # márgenes mínimos
 
@@ -136,6 +137,21 @@ def generar_balance_para(id_cuit, desde, hasta,cuit_str,razon_social):
                 self.ln(1)
                 self.line(10, self.get_y(), 287, self.get_y())
                 self.ln(1)
+                # Calcular el control
+                try:
+                    total_activo = sum(s for sub in self.estructura_horizontal.get("ACTIVO", {}).values() for _, s in sub)
+                    total_pasivo = sum(s for sub in self.estructura_horizontal.get("PASIVO", {}).values() for _, s in sub)
+                    total_pn = sum(s for sub in self.estructura_horizontal.get("PATRIMONIO NETO", {}).values() for _, s in sub)
+                    total_resultado = sum(s for sub in self.estructura_horizontal.get("RESULTADOS", {}).values() for _, s in sub)
+                    control = total_activo + total_pasivo + total_pn + total_resultado
+                except Exception:
+                    control = 0  # fallback si algo falla
+
+                # Mostrar control en esquina superior derecha
+                self.set_font("Arial", "I", 7)
+                self.set_xy(260, 10)  # Posición arriba derecha (ajustable si es necesario)
+                self.cell(30, 5, f"Control: ${control:,.2f}", align="R")
+
 
             def render_col(self, x, w, title, estructura):
                 self.set_xy(x, 30)
@@ -197,6 +213,7 @@ def generar_balance_para(id_cuit, desde, hasta,cuit_str,razon_social):
                 cuit=cuit_str,
                 desde=desde,
                 hasta=hasta,
+                estructura_horizontal=estructura_horizontal,  # 👈 Agregar esto
                 orientation='L', unit='mm', format='A4'
             )
             pdf.add_page()
