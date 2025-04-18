@@ -147,7 +147,7 @@ def generar_balance_para(id_cuit, desde, hasta,cuit_str,razon_social):
                     total_bloque += sum(monto for _, monto in cuentas)
 
                 # Título con total del bloque
-                titulo_completo = f"{title.upper()} - TOTAL: ${total_bloque:,.2f}"
+                titulo_completo = f"{title.upper()} - ${total_bloque:,.2f}"
                 self.cell(w, 8, titulo_completo, ln=True, align="C", border=1, fill=True)
 
                 for subrubro, cuentas in estructura.items():
