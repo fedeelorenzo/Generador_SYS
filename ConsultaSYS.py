@@ -6,6 +6,8 @@ import streamlit as st
 import tempfile
 import os
 import datetime
+import io # Agregá esto al inicio
+import xlsxwriter # Asegurate de tenerlo instalado (pip install xlsxwriter)
 # --- CONFIGURACIÓN ---
 
 TOKEN_USUARIO = st.secrets["token_sos"]  # Reemplazá por tu token personal
@@ -254,3 +256,100 @@ def generar_balance_para(id_cuit, desde, hasta,cuit_str,razon_social):
             return False, f"❌ Error al generar PDF: {e}"
     except Exception as e:
             return False, f"Error en Generar Balance"
+
+
+def generar_excel_para(id_cuit, desde, hasta, cuit_str, razon_social):
+    try:
+        # Repetimos la lógica de limpieza de fechas
+        if isinstance(desde, str):
+            desde_obj = datetime.datetime.strptime(desde, "%Y-%m-%d")
+        else:
+            desde_obj = desde
+            
+        if isinstance(hasta, str):
+            hasta_obj = datetime.datetime.strptime(hasta, "%Y-%m-%d")
+        else:
+            hasta_obj = hasta
+
+        fecha_api_desde = desde_obj.strftime("%Y-%m-%d 00:00:00")
+        fecha_api_hasta = hasta_obj.strftime("%Y-%m-%d 23:59:59")
+
+        # Buscamos la data
+        jwt = obtener_jwt_cliente(int(id_cuit))
+        datos = obtener_sumas_saldos(jwt, fecha_api_desde, fecha_api_hasta)
+        
+        # Procesamos la estructura igual que para el PDF
+        df = pd.DataFrame(datos)
+        df["montosaldo_fin"] = df["montosaldo_fin"].round(2)
+        df = df[df["montosaldo_fin"] != 0]
+        df["Rubro Balance"] = df["codigo"].apply(clasificar_rubro)
+        df["Presentacion"] = df["codigo"].apply(mapear_presentacion)
+
+        bloques = {
+            "ACTIVO": df[df["Rubro Balance"].isin(["Activo Corriente", "Activo No Corriente"])],
+            "PASIVO": df[df["Rubro Balance"].isin(["Pasivo Corriente", "Pasivo No Corriente"])],
+            "PATRIMONIO NETO": df[df["Rubro Balance"] == "Patrimonio Neto"],
+            "RESULTADOS": df[df["Rubro Balance"].isin(["Ingresos", "Gastos"])]
+        }
+
+        # --- CREACIÓN DEL EXCEL ---
+        output = io.BytesIO()
+        workbook = xlsxwriter.Workbook(output)
+        sheet = workbook.add_worksheet("Balance")
+
+        # Formatos
+        fmt_titulo = workbook.add_format({'bold': True, 'size': 14, 'align': 'center'})
+        fmt_header_bloque = workbook.add_format({'bold': True, 'bg_color': '#EBEBEB', 'border': 1})
+        fmt_monto_header = workbook.add_format({'bold': True, 'bg_color': '#EBEBEB', 'border': 1, 'num_format': '#,##0.00'})
+        fmt_subrubro = workbook.add_format({'bold': True, 'bg_color': '#F5F5F5', 'bottom': 1})
+        fmt_monto_sub = workbook.add_format({'bold': True, 'bg_color': '#F5F5F5', 'bottom': 1, 'num_format': '#,##0.00'})
+        fmt_cuenta = workbook.add_format({'size': 9})
+        fmt_monto_cuenta = workbook.add_format({'size': 9, 'num_format': '#,##0.00'})
+
+        # Encabezado General
+        sheet.merge_range('A1:H1', f"Balance General - {razon_social}", fmt_titulo)
+        sheet.merge_range('A2:H2', f"Ejercicio: {desde_obj.strftime('%d/%m/%Y')} al {hasta_obj.strftime('%d/%m/%Y')} - CUIT: {cuit_str}", workbook.add_format({'align': 'center'}))
+
+        # Escribir las 4 columnas (A-B, C-D, E-F, G-H)
+        col_indices = [0, 2, 4, 6] # Columnas de inicio para cada bloque
+        
+        for i, (nombre_bloque, df_bloque) in enumerate(bloques.items()):
+            col = col_indices[i]
+            row = 4
+            
+            # Total del bloque
+            total_bloque = df_bloque["montosaldo_fin"].sum()
+            
+            # Título del Bloque
+            sheet.write(row, col, nombre_bloque, fmt_header_bloque)
+            sheet.write(row, col + 1, total_bloque, fmt_monto_header)
+            row += 2
+
+            # Agrupar por Presentacion (Subrubros)
+            subrubros = df_bloque.groupby("Presentacion")
+            for pres, data_sub in subrubros:
+                total_sub = data_sub["montosaldo_fin"].sum()
+                if total_sub == 0: continue
+                
+                # Limpiar nombre subrubro (quitar el código inicial)
+                pres_clean = " ".join(pres.split(" ")[1:]) if " " in pres else pres
+                
+                sheet.write(row, col, pres_clean, fmt_subrubro)
+                sheet.write(row, col + 1, total_sub, fmt_monto_sub)
+                row += 1
+                
+                # Cuentas individuales
+                for _, r in data_sub.iterrows():
+                    sheet.write(row, col, f"  {r['cuenta']}", fmt_cuenta)
+                    sheet.write(row, col + 1, r['montosaldo_fin'], fmt_monto_cuenta)
+                    row += 1
+                row += 1 # Espacio entre subrubros
+
+        workbook.close()
+        return True, output.getvalue()
+
+    except Exception as e:
+        return False, str(e)
+
+
+
