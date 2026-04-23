@@ -5,7 +5,7 @@ from collections import defaultdict
 import streamlit as st
 import tempfile
 import os
-
+import datetime
 # --- CONFIGURACIÓN ---
 
 TOKEN_USUARIO = st.secrets["token_sos"]  # Reemplazá por tu token personal
@@ -55,16 +55,27 @@ def mapear_presentacion(codigo):
     return "Z_99_OTROS"
 
 def generar_balance_para(id_cuit, desde, hasta,cuit_str,razon_social):
-    try:
-        if not isinstance(desde, str):
-            desde = desde.strftime("%Y-%m-%d")
-        if not isinstance(hasta, str):
-            hasta = hasta.strftime("%Y-%m-%d")
-        jwt = obtener_jwt_cliente(int(id_cuit))
-        datos = obtener_sumas_saldos(jwt, desde, hasta)
-        df = pd.DataFrame(datos)
-        
+        try:
+        # 1. Nos aseguramos de que estamos trabajando con objetos de fecha de Python
+        if isinstance(desde, str):
+            desde = datetime.datetime.strptime(desde, "%Y-%m-%d").date()
+        if isinstance(hasta, str):
+            hasta = datetime.datetime.strptime(hasta, "%Y-%m-%d").date()
 
+        # 2. Guardamos las fechas "puras" para que el título del PDF quede lindo
+        fecha_pdf_desde = desde.strftime("%Y-%m-%d")
+        fecha_pdf_hasta = hasta.strftime("%Y-%m-%d")
+
+        # 3. EL TRUCO: Le forzamos la hora a la API para que la conversión UTC-3 no nos robe el día.
+        # Al ponerle 23:59:59 a la fecha 'hasta', le decimos "traeme hasta el último segundo del mes"
+        fecha_api_desde = desde.strftime("%Y-%m-%d 00:00:00")
+        fecha_api_hasta = hasta.strftime("%Y-%m-%d 23:59:59")
+        
+        jwt = obtener_jwt_cliente(int(id_cuit))
+        
+        # 4. Le mandamos a SOS Contador las fechas CON HORA
+        datos = obtener_sumas_saldos(jwt, fecha_api_desde, fecha_api_hasta)
+        df = pd.DataFrame(datos)
         df["montosaldo_fin"] = df["montosaldo_fin"].round(2)
         df = df[df["montosaldo_fin"] != 0]  # 👈 FILTRAR cuentas con saldo ≠ 0
         df["Rubro Balance"] = df["codigo"].apply(clasificar_rubro)
