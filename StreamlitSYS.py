@@ -46,7 +46,7 @@ if submitted and empresa:
     cuit = clientes[empresa]["cuit"]
     id_cuit = clientes[empresa]["id"]
 
-    exito, ruta_pdf = generar_balance_para(id_cuit, str(desde), str(hasta), cuit, empresa)
+    exito, ruta_pdf = generar_balance_para(id_cuit, desde, hasta, cuit, empresa)
 
     if exito and os.path.exists(ruta_pdf):
         st.success("Balance generado correctamente ✅")
