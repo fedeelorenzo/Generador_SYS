@@ -46,17 +46,36 @@ if submitted and empresa:
     cuit = clientes[empresa]["cuit"]
     id_cuit = clientes[empresa]["id"]
 
-    exito, ruta_pdf = generar_balance_para(id_cuit, desde, hasta, cuit, empresa)
+    # Generamos PDF
+    exito_pdf, ruta_pdf = generar_balance_para(id_cuit, desde, hasta, cuit, empresa)
+    
+    # Generamos Excel
+    exito_xls, contenido_xls = generar_excel_para(id_cuit, desde, hasta, cuit, empresa)
 
-    if exito and os.path.exists(ruta_pdf):
-        st.success("Balance generado correctamente ✅")
-        with open(ruta_pdf, "rb") as f:
+    if exito_pdf and exito_xls:
+        st.success("Documentos generados correctamente ✅")
+        
+        col_btn1, col_btn2 = st.columns(2)
+        
+        with col_btn1:
+            with open(ruta_pdf, "rb") as f:
+                st.download_button(
+                    label="📥 Descargar PDF",
+                    data=f,
+                    file_name=os.path.basename(ruta_pdf),
+                    mime="application/pdf",
+                    use_container_width=True
+                )
+        
+        with col_btn2:
+            nombre_xls = os.path.basename(ruta_pdf).replace(".pdf", ".xlsx")
             st.download_button(
-                label="📥 Descargar PDF",
-                data=f,
-                file_name=os.path.basename(ruta_pdf),
-                mime="application/pdf"
+                label="Excel", # Botón de Excel
+                data=contenido_xls,
+                file_name=nombre_xls,
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                use_container_width=True
             )
     else:
-        st.error("No se pudo generar o encontrar el archivo PDF.")
+        st.error(f"Error al generar: {ruta_pdf if not exito_pdf else contenido_xls}")
    
