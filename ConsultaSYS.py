@@ -56,6 +56,10 @@ def mapear_presentacion(codigo):
 
 def generar_balance_para(id_cuit, desde, hasta,cuit_str,razon_social):
     try:
+        if not isinstance(desde, str):
+            desde = desde.strftime("%Y-%m-%d")
+        if not isinstance(hasta, str):
+            hasta = hasta.strftime("%Y-%m-%d")
         jwt = obtener_jwt_cliente(int(id_cuit))
         datos = obtener_sumas_saldos(jwt, desde, hasta)
         df = pd.DataFrame(datos)
