@@ -1,5 +1,5 @@
 import streamlit as st
-from ConsultaSYS import generar_balance_para
+from ConsultaSYS import generar_balance_para, generar_excel_para
 import os
 from PIL import Image
 
