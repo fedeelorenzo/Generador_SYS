@@ -4,3 +4,4 @@ requests
 fpdf
 openpyxl
 xlsxwriter
+io
