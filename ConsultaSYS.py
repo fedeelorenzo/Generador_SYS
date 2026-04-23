@@ -55,7 +55,7 @@ def mapear_presentacion(codigo):
     return "Z_99_OTROS"
 
 def generar_balance_para(id_cuit, desde, hasta,cuit_str,razon_social):
-        try:
+    try:
         # 1. Nos aseguramos de que estamos trabajando con objetos de fecha de Python
         if isinstance(desde, str):
             desde = datetime.datetime.strptime(desde, "%Y-%m-%d").date()
